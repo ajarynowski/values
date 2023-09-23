@@ -1,0 +1,131 @@
+---
+title: "Cutural factors of COViD-2019"
+author: "Andrzej JArynowski"
+date: "29/04/2020"
+output:
+  word_document: default
+  pdf_document: default
+  html_document: default
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+
+## Problem Introducion
+The COVID-19 outbreak data give an opportunity to comparare possible role of social attitudes and preferred social values.
+Social norms are rules that prescribe what people should and should not do in a social surroundings. People are instructed by norms that tell them to keep their promises, or avoid deceiving other people. But how do norms work in a sudden change of social circumstances? 
+Disregading medial differnces, we are trying to consider the relative cross-cultural differences to predict relative penetration of COVID-19 pandemic internationally.
+
+
+
+
+#State of the art
+There was few attempts to connect cultural variables:
+- For 63 world countries, there was no significant correlation between cultural dimmnstions and COVID-19 cases (Pogrebna & Kharlamov 2020)
+- For Poland, Italy, South Korea, China and Iran, there was visual realtionship cultural dimmnstions and success in COVID-19 menagment (Jarynowski, et al. 2020) 
+- For 93 countries (Messner 2020) epidemic growth rate was explaned by institutional context (negatively associated) , education (positively associated),  individualistic rather than collectivistic (negatively associated),  higher levels of power distance (negatively associated), Hedonistic  values (positively associated).
+
+
+```{r 1}
+library(tidyverse)
+library("ggrepel")
+
+```
+
+## Calculation of variables
+
+We analyze cutural variables and time series of daily R0 estimates for 27 European countries.
+
+We define staring R0 - maximal observed R0
+Controlled R0 - mean R0 (Mean R0 for each country is a proxy of effectiveness of mitigation strategies)
+
+Handwashing Avoidance = % of people who do not wash their hands after using toilet (BVA)
+Cultural dimensions according to World Value Study (index in range 0-10):
+"harmony"   
+"embedded"     
+"hierarchy"    
+ "mastery"     
+ "aff.auton"   
+ "intel.auton"  
+ "egalitar" 
+
+```{r 2, echo=FALSE, include=TRUE}
+cult_covid=read.csv("cultvalue_covid_eu.csv")
+cult_covid$control=cult_covid$maxi/cult_covid$mediana
+#colnames(cult_covid)
+
+model=lm( control~harmony+embedded+hierarchy+mastery+aff.auton+intel.auton+egalitar+Handwashing , data = cult_covid)
+#summary(model)
+model_m=lm( maxi~harmony+embedded+hierarchy+mastery+aff.auton+intel.auton+egalitar+Handwashing , data = cult_covid)
+#summary(model_m)
+model_med=lm( mediana~harmony+embedded+hierarchy+mastery+aff.auton+intel.auton+egalitar+Handwashing , data = cult_covid)
+#summary(model_med)
+
+model_sred=lm( srednia~harmony+embedded+hierarchy+mastery+aff.auton+intel.auton+egalitar+Handwashing , data = cult_covid)
+#summary(model_sred)
+
+model_h=lm( control~harmony+embedded+hierarchy+mastery+aff.auton+intel.auton+egalitar, data = cult_covid)
+#summary(model_h)
+
+model_m=lm( maxi~harmony+embedded+hierarchy+mastery+aff.auton+intel.auton+egalitar , data = cult_covid)
+#summary(model_m)
+model_med=lm( mediana~harmony+embedded+hierarchy+mastery+aff.auton+intel.auton+egalitar , data = cult_covid)
+#summary(model_med)
+cult_covid$controlled_R0=cult_covid$srednia
+cult_covid$starting_R0=cult_covid$maxi
+
+```
+
+## Results
+
+We can see significant relationsip in a linear multiple regression between controlled R0 and cultural dimensions.
+
+```{r tabela}
+model_controlled=lm(controlled_R0~harmony+embedded+hierarchy+mastery+aff.auton+intel.auton+egalitar, data = cult_covid)
+summary(model_controlled)
+
+```
+embedded and aff.auton are significantly negatively associated with control.   
+
+hierarchy and intel.auton are significantly positively associated with control.
+
+Remark - lower controlled R0 is better
+
+
+Visualization of 2 most significant cultural dimensions an controlled/starting R0.
+```{r wumiary}
+
+cult_covid$controlled_Rt=cult_covid$controlled_R0
+cult_covid$starting_Rt=cult_covid$starting_R0
+
+pl <- ggplot(cult_covid, aes(embedded, aff.auton, size=starting_Rt, color=controlled_Rt)) + theme_bw()+
+  geom_point() + xlab("embedded") +
+geom_text_repel(aes(label=country_code),hjust=0, vjust=0, color="red")
+pl
+
+```
+
+Hand hygene and starting R0.
+
+```{r higiena}
+
+
+pl <- ggplot(cult_covid, aes(Handwashing, starting_R0, size=starting_R0, color=controlled_R0)) +
+  geom_point() + xlab("handwashing avoidance") +geom_text(aes(label=country_code),hjust=0, vjust=0, color="red")+ geom_smooth(method = "lm")
+pl
+
+```
+
+## Condlusions
+
+The results emphasize the need to pay more  attention to cultural context when compering outbreak dynamics between countries
+
+Literature
+
+JARYNOWSKI, A., WÓJTA-KEMPA, M., PŁATEK, D., & CZOPEK, K. (2020). ATTEMPT TO UNDERSTAND PUBLIC-HEALTH RELEVANT SOCIAL DIMENSIONS OF COVID-19 OUTBREAK IN POLAND. Society Register, 4(3), 7-44.
+Pogrebna, G., & Kharlamov, A. (2020). The Impact of Cross-Cultural Differences in Handwashing Patterns on the COVID-19 Outbreak Magnitude.
+Messner, W. (2020). The Institutional and Cultural Context of Cross-National Variation in COVID-19 Outbreaks. medRxiv.
